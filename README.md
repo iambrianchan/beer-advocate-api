@@ -67,12 +67,4 @@ ba.beerPage("/beer/profile/29223/84343/", function(beer) {
     pDev: '10.4%' } ]
 ```
 
-
-
-## License
-
-Beer Advocate API is licensed [MIT](http://opensource.org/licenses/MIT)
-
-* * *
-
-Copyright (c) 2014 Charlie Hield
+Not associated with BeerAdvocate.com. Originally forked from Beer Advocate API by Charlie Hield.

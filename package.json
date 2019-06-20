@@ -1,6 +1,6 @@
 {
   "name": "beer-advocate-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Unofficial library for working with Beer Advocate data.",
   "main": "index.js",
   "scripts": {
@@ -13,12 +13,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/stursby/beer-advocate-api.git"
+    "url": "https://github.com/iambrianchan/beer-advocate-api.git"
   },
-  "author": "Charlie Hield",
+  "author": "Brian Chan",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "~0.13.0",
-    "request": "~2.30.0"
+    "cheerio": "^1.0.0-rc.3",
+    "request": "^2.88.0"
   }
 }

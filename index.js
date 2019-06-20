@@ -6,47 +6,63 @@ exports.beerSearch = function(query, callback) {
     var url = "http://beeradvocate.com/search/?q=" + encodeURIComponent(query) + "&qt=beer";
 
     request(url, function (error, response, html) {
+    	if (error) {
+    	    console.log(error)
+    	}
 
         if (!error && response.statusCode == 200) {
 
-            var $ = cheerio.load(html);
+	    var $ = cheerio.load(html);
+            var beers_names = [];
+            var beers_locations = [];
 
-            var beers = [];
-
-            $('#baContent ul li').each(function(beer) {
-
+            $('#ba-content div').eq(1).children('div').children('a').each(function(beer) {
                 // One beer listing
-                var li = $(this);
+                var item = $(this);
 
                 // Beer details
-                var beer = li.children('a').eq(0),
-                    beer_name = beer.text(),
-                    beer_url = beer.attr('href');
-
-                // Brewery details
-                var brewery = li.children('a').eq(1),
-                    brewery_name = brewery.text(),
-                    brewery_url = brewery.attr('href'),
-                    brewery_location = brewery.next().text();
-
-                // Retired?
-                var retired = false;
-                if (beer.prev().text() === "Retired - ") {
-                    var retired = true;
-                }
+                beer_name = item.text(),
+                beer_url = item.attr('href');
 
                 // Data to return
                 var data = {
                     beer_name: beer_name,
                     beer_url: beer_url,
-                    brewery_name: brewery_name,
-                    brewery_location: brewery_location.slice(2),
-                    brewery_url: brewery_url,
-                    retired: retired
                 };
                 
                 // Add to beer array
-                beers.push(data);
+                beers_names.push(data);
+
+            });
+
+            // Filter out the elements the span elements that say "Retired"
+            var filtered = $('#ba-content div').eq(1).children('div').children('span').map(function(beer) {
+                    if ($(this).children().length > 0) {
+                        return $(this);
+                    }
+                });
+            // Iterate over each of the span elements to extract brewery/location info
+            filtered.each(function(beer) {
+                var item = $(this);
+
+               // Brewery details
+                   brewery_name = item.find('a').text(),
+                   brewery_url = item.find('a').attr('href'),
+                   brewery_location = item.text().split('|')[1].replace(/[0-9\.]/g, '').trim();
+
+                // Data to return
+                var data = {
+                   brewery_name: brewery_name,
+                   brewery_location: brewery_location,
+                   brewery_url: brewery_url,
+                };
+                // Add to beer array
+                beers_locations.push(data);
+
+            });
+
+            beers = beers_names.map(function(beer_name, index) {
+                return {...beer_name, ...beers_locations[index]};
 
             });
 
@@ -71,35 +87,39 @@ exports.beerPage = function(url, callback) {
             var beer = [];
 
             // Beer & brewery name
-            var title = $('h1').text().split(/\s-\s/),
+            var title = $('h1').text().split(/\s\|\s/),
                 beer_name = title[0],
                 brewery_name = title[1];
 
             // ABV
-            var beer_abv_chunk = $('#baContent table').eq(1).find('td').text().split(/%\sABV/)[0],
-                beer_abv = beer_abv_chunk.substr(beer_abv_chunk.length - 6).trimLeft() + "%";
+            var beer_abv_chunk = $('#info_box').eq(0),
+                beer_abv = beer_abv_chunk.text().match(/[0-9.0-9]+%/)[0];
 
             // Brewery details
-            var links = $('#baContent table').find('form').parent().find('a'),
-                brewery_state = links.eq(2).text(),
-                brewery_country = links.eq(3).text(),
+            var links = beer_abv_chunk.find('a'),
+                brewery_state = links.eq(1).text(),
+                brewery_country = links.eq(2).text(),
                 beer_style = links.eq(4).text();
 
             // Beer Advocate scores
-            var ba_info = $('.BAscore_big').eq(0),
-                ba_score = ba_info.text(),
-                ba_rating = ba_info.next().next().text();
+            var ba_info = $('#score_box').eq(0),
+                ba_score = ba_info.find('span.ba-ravg').text() + ba_info.find('span.BAscore_big_5').text(),
+                ba_rating = ba_info.find('b').eq(1).text();
 
             var bros_info = $('.BAscore_big').eq(1),
                 bros_score = bros_info.text(),
                 bros_rating = bros_info.next().next().text();
 
             // More stats
-            var stats = $('#baContent table').eq(2).find('td:last-child').text().split(/:\s/),
-                ratings = stats[1].replace("Reviews",""),
-                reviews = stats[2].replace("rAvg",""),
-                rAvg = stats[3].replace("\npDev",""),
-                pDev = stats[4].replace("\n\nRatings Help\n","");
+            var stats = $('#item_stats dl').eq(0).text().match(/Ranking.+%/gs)[0].split('\n');
+            filtered = stats.filter(function(item) {
+                return item != '';
+            });
+
+                rankings = stats[1].replace("#", ""),
+                reviews = stats[3],
+                ratings = stats[5],
+                pDev = stats[7];
 
 
             // Data to return
@@ -114,9 +134,9 @@ exports.beerPage = function(url, callback) {
                 ba_rating: ba_rating,
                 bros_score: bros_score,
                 bros_rating: bros_rating,
-                ratings: ratings,
+                rankings: rankings,
                 reviews: reviews,
-                rAvg: rAvg,
+                ratings: ratings,
                 pDev: pDev
             };
 
