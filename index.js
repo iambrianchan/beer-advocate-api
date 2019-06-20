@@ -13,7 +13,7 @@ beerSearch = function(query, callback) {
         // Sometimes the search will redirect to the beer page and we catch it
     	if (response.request.uri.href != url) {
     	    return beerPage(response.request.uri.path, function(beer) {
-                callback(JSON.stringify(beer));
+                callback(beer);
             });
     	}
 
@@ -84,9 +84,9 @@ beerSearch = function(query, callback) {
 
 }
 
-beerPage = function(url, callback) {
+beerPage = function(uri_path, callback) {
 
-    var url = "http://beeradvocate.com" + url;
+    var url = "http://beeradvocate.com" + uri_path;
 
     request(url, function (error, response, html) {
 
@@ -137,6 +137,7 @@ beerPage = function(url, callback) {
                 beer_name: beer_name,
                 beer_style: beer_style,
                 beer_abv: beer_abv,
+                beer_url: uri_path,
                 brewery_name: brewery_name,
                 brewery_state: brewery_state,
                 brewery_country: brewery_country,
