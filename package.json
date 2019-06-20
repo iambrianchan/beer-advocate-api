@@ -1,5 +1,5 @@
 {
-  "name": "beer-advocate-api",
+  "name": "ba-api",
   "version": "0.0.2",
   "description": "Unofficial library for working with Beer Advocate data.",
   "main": "index.js",

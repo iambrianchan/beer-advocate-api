@@ -1,15 +1,23 @@
 var request = require('request'),
     cheerio = require('cheerio');
 
-exports.beerSearch = function(query, callback) {
+beerSearch = function(query, callback) {
 
-    var url = "http://beeradvocate.com/search/?q=" + encodeURIComponent(query) + "&qt=beer";
+    var url = "https://www.beeradvocate.com/search/?q=" + encodeURIComponent(query) + "&qt=beer";
 
     request(url, function (error, response, html) {
     	if (error) {
-    	    console.log(error)
+    	    console.log(error);
     	}
 
+        // Sometimes the search will redirect to the beer page and we catch it
+    	if (response.request.uri.href != url) {
+    	    return beerPage(response.request.uri.path, function(beer) {
+                callback(JSON.stringify(beer));
+            });
+    	}
+
+        // Else parse the search results
         if (!error && response.statusCode == 200) {
 
 	    var $ = cheerio.load(html);
@@ -41,6 +49,7 @@ exports.beerSearch = function(query, callback) {
                         return $(this);
                     }
                 });
+
             // Iterate over each of the span elements to extract brewery/location info
             filtered.each(function(beer) {
                 var item = $(this);
@@ -61,12 +70,13 @@ exports.beerSearch = function(query, callback) {
 
             });
 
+            // Merge the data taken from the a and span tags
             beers = beers_names.map(function(beer_name, index) {
                 return {...beer_name, ...beers_locations[index]};
 
             });
 
-            callback(beers);
+            callback(JSON.stringify(beers));
 
         }
 
@@ -74,7 +84,7 @@ exports.beerSearch = function(query, callback) {
 
 }
 
-exports.beerPage = function(url, callback) {
+beerPage = function(url, callback) {
 
     var url = "http://beeradvocate.com" + url;
 
@@ -143,10 +153,13 @@ exports.beerPage = function(url, callback) {
             // Add to beer array
             beer.push(data);
 
-            callback(beer);
+            callback(JSON.stringify(beer));
 
         }
 
     });
 
 }
+
+exports.beerSearch = beerSearch;
+exports.beerPage = beerPage;
